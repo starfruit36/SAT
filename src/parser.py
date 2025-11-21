@@ -1,55 +1,38 @@
-try:
-    with open("../data/test.cnf", "r") as file:
-        problem = file.readlines()
-        SAT = []
-        clause = []
-        num_of_var = 0
-        num_of_clauses = 0
-        valid = True
-        neg_switch = False
-        for lines in problem:
-            if lines.startswith("c"):
-                continue
-            elif lines.startswith("p"):
-                for i in lines:
+def parse_dimacs(filename):
+    SAT = []
+    clause = []
+    num_of_var = 0
+    num_of_clauses = 0
+    try:
+        with open(filename, "r") as file:
+            for line in file:
+                line = line.strip()
+                # 1. Skip comments and empty lines
+                if not line or line.startswith("c"):
+                    continue
+                # 2. Parse Header
+                if line.startswith("p"):
+                    parts = line.split()  
+                    num_of_var = int(parts[2])
+                    num_of_clauses = int(parts[3])
+                    continue
+                tokens = line.split() 
+                for token in tokens:
                     try:
-                        int(i)
-                        if num_of_var == 0:
-                            num_of_var = i
-                        elif num_of_var != 0 and num_of_clauses == 0:
-                            num_of_clauses = i
+                        num = int(token) 
+                        if num == 0: # 0 means end of clause
+                            if clause:
+                                SAT.append(clause[:])
+                                clause = []
                         else:
-                            print("An error occurred!")  # placeholder
-                    except:
+                            clause.append(num)
+                    except ValueError:
+                        print(f"Error parsing token: {token}")
                         continue
-                continue
-            try:
-                int(lines[0])
-                lines = lines.strip()
-                lines = lines.replace(" ", "")
-                for i in lines:
-                    try:
-                        if i != "-":
-                            int(i)
-                    except:
-                        valid = False
-                        print("errorrr!")  # placeholder
-                    if i != "-" and valid:
-                        if not neg_switch:
-                            num = int(i)
-                        else:
-                            num = -int(i)
-                            neg_switch = False
-                    elif i == "-" and valid:
-                        neg_switch = True
-                        continue
-                    if num != 0:
-                        clause.append(num)
-                    elif num == 0:
-                        if len(clause) != 0:
-                            SAT.append(clause[:])
-                            clause.clear()
-            except:
-                print("error!")  # placeholder
-except:
-    print("An error!") #placeholder
+    except FileNotFoundError:
+        print("File not found!")
+        return [], 0
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return [], 0
+    return SAT, num_of_var, num_of_clauses
