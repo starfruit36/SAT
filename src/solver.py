@@ -6,13 +6,14 @@ class DPLLSolver:
         # State Dictionary: {1: True, 2: False}
         # If a variable isn't here, it is Unassigned.
         self.assignments = {}
-
+        # Guess history for backtracking logic
+        self.history = []
     def get_literal_value(self, literal):
         """
         Retrieves the truth value of a literal based on current assignments.
         Returns: True (satisfied), False (unsatisfied), or None (unassigned).
         """
-        node  = abs(literal)
+        node = abs(literal)
         # 1. Check if the variable is unassigned 
         try:
             assignment = self.assignments[node]
@@ -76,3 +77,41 @@ class DPLLSolver:
             return unit_propagation
         # If count is 0, all literals are False (Conflict), so no move to suggest.
         return None
+
+    def assign(self, literal, is_decision=False):
+        """
+        Updates the assignment state and history stack.
+        Args:
+            literal (int): The variable to set (e.g., 3 or -3).
+            is_decision (bool): 
+                True if this is a guess (start of a new stack level).
+                False if this is a forced move (add to current stack level).
+        """
+        node = abs(literal)
+        true_assignment = (literal > 0)
+        # Update the guess history
+        if is_decision:
+            self.history.append([node])
+        else:
+            # Forced Move (Unit Propagation)
+            if not self.history:
+                # Start a new level for future guessing if history is empty
+                self.history.append([node])
+            else:
+                # Add to the current Decision Level
+                self.history[-1].append(node)
+        #  Update the Dictionary
+        self.assignments[node] = true_assignment
+
+    def backtrack(self):
+        """
+        Undoes the most recent decision level and all its propagations.
+        """
+        cleaner_duty = []
+        # 1. Get the list of variables from the top of the stack
+        if self.history:
+            cleaner_duty = self.history.pop()
+        # 2. Delete them from assignments
+        for literal in cleaner_duty:
+            if literal in self.assignments:
+                del self.assignments[literal]
